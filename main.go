@@ -4,11 +4,12 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"io/ioutil"
 	"math"
-
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/adaptors/view"
+	"net/http"
+	"fmt"
+	"strings"
+	"strconv"
 )
 
 const tileSize int = 256
@@ -18,14 +19,7 @@ const minY float64 = -2
 const maxY float64 = 2
 
 func main() {
-	app := iris.New()
-
-	app.Adapt(iris.DevLogger(), httprouter.New())
-	app.Adapt(view.HTML("./views", ".html"))
-	app.Get("/", func(ctx *iris.Context) {
-		ctx.Render("index.html", iris.Map{}, iris.RenderOptions{})
-	})
-
+/*
 	app.Get("/:x/:y/:z", func(ctx *iris.Context) {
 		x, _ := ctx.ParamInt("x")
 		y, _ := ctx.ParamInt("y")
@@ -36,11 +30,36 @@ func main() {
 		ctx.Header().Add("Content-Type", "image/png")
 		png.Encode(ctx, img)
 	})
+*/
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		urlParts := strings.Split(r.URL.Path, "/")
+		if (len(urlParts) == 4){
+			x, _ := strconv.ParseInt(urlParts[1], 10, 64)
+			y, _ := strconv.ParseInt(urlParts[2], 10, 64)
+			z, _ := strconv.ParseInt(urlParts[3], 10, 64)
+			img := renderTile(x, y, z)
 
-	app.Listen(":6300")
+			w.Header().Add("Content-Type", "image/png")
+			png.Encode(w, img)
+			return
+		}
+		content, _ := ioutil.ReadFile("views/index.html")
+		w.Header().Set("Content-Type", "text/html")
+		fmt.Fprintf(w, string(content))
+	})
+	http.ListenAndServe(":8080", nil)
 }
+/*
+func loadPage(title string) (*Page, error) {
 
-func renderTile(x int, y int, z int) *image.RGBA {
+    body, err := ioutil.ReadFile("views/index.html")
+    if err != nil {
+        return nil, err
+    }
+    return &Page{Title: title, Body: body}, nil
+}
+*/
+func renderTile(x int64, y int64, z int64) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, tileSize, tileSize))
 
 	numberOfTiles := math.Pow(2, float64(z))
