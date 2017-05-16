@@ -18,47 +18,35 @@ const maxX float64 = 2
 const minY float64 = -2
 const maxY float64 = 2
 
+
 func main() {
-/*
-	app.Get("/:x/:y/:z", func(ctx *iris.Context) {
-		x, _ := ctx.ParamInt("x")
-		y, _ := ctx.ParamInt("y")
-		z, _ := ctx.ParamInt("z")
-
-		img := renderTile(x, y, z)
-
-		ctx.Header().Add("Content-Type", "image/png")
-		png.Encode(ctx, img)
-	})
-*/
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		urlParts := strings.Split(r.URL.Path, "/")
 		if (len(urlParts) == 4){
-			x, _ := strconv.ParseInt(urlParts[1], 10, 64)
-			y, _ := strconv.ParseInt(urlParts[2], 10, 64)
-			z, _ := strconv.ParseInt(urlParts[3], 10, 64)
-			img := renderTile(x, y, z)
-
-			w.Header().Add("Content-Type", "image/png")
-			png.Encode(w, img)
-			return
+			handleTile(w,r)
 		}
-		content, _ := ioutil.ReadFile("views/index.html")
-		w.Header().Set("Content-Type", "text/html")
-		fmt.Fprintf(w, string(content))
+		handlePage(w,r)
 	})
 	http.ListenAndServe(":8080", nil)
 }
-/*
-func loadPage(title string) (*Page, error) {
 
-    body, err := ioutil.ReadFile("views/index.html")
-    if err != nil {
-        return nil, err
-    }
-    return &Page{Title: title, Body: body}, nil
+func handleTile(w http.ResponseWriter, r *http.Request){
+	urlParts := strings.Split(r.URL.Path, "/")
+	x, _ := strconv.ParseInt(urlParts[1], 10, 64)
+	y, _ := strconv.ParseInt(urlParts[2], 10, 64)
+	z, _ := strconv.ParseInt(urlParts[3], 10, 64)
+	img := renderTile(x, y, z)
+
+	w.Header().Add("Content-Type", "image/png")
+	png.Encode(w, img)
 }
-*/
+
+func handlePage(w http.ResponseWriter, r *http.Request){
+	content, _ := ioutil.ReadFile("views/index.html")
+	w.Header().Set("Content-Type", "text/html")
+	fmt.Fprintf(w, string(content))
+}
+
 func renderTile(x int64, y int64, z int64) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, tileSize, tileSize))
 
